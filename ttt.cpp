@@ -1,43 +1,81 @@
 #include<iostream>
+#include<vector>
+#include<ctime>
+#include<cstdlib>
+#include<string>
 using namespace std;
-#define MAX_SIZE 100
-struct SqList{
-   int data[MAX_SIZE];
-   int length;
+template <class T>
+void myswap(T &a,T &b){
+    T temp = a;
+    a = b;
+    b = temp;
+}
+template <typename T,typename Cmp>
+void mysort(vector<T> &v,int n,Cmp cmp){
+    for(int i=0;i<n-1;i++){
+        for(int j=0;j<n-i-1;j++){
+            if(cmp(v[j],v[j+1])){
+                myswap(v[j],v[j+1]);
+            }
+        }
+    }
+} 
+
+class person{
+    public:
+        string name;
+        int age;
+    public:
+    person(string n,int a):name(n),age(a){}
+    void getinfo(){
+        cout<<"Name: "<<name<<", Age: "<<age<<endl;
+    }
+
 };
 
-int insertorder(SqList&L,int x){
-    if(L.length >= MAX_SIZE){
-        return 0;
-    }
-    int i = L.length - 1;
-    while(i >= 0 && L.data[i] > x){
-        L.data[i + 1] = L.data[i];
-        i--;
-    }
-    L.data[i + 1] = x;
-    L.length++;
-    return 1;
-}
+
 int main(){
-    SqList L;
-    L.length = 7;
-    for(int i = 0; i < L.length; i++){
-        L.data[i] = i*5;
+    srand(time(nullptr));
+    vector<person> v;
+    v.push_back(person("Alice",30));
+    v.push_back(person("Bob",25));
+    v.push_back(person("Charlie",35));
+    cout<<"Before sorting:"<<endl;
+    for(auto &p:v){
+        p.getinfo();
     }
-    cout<<"当前顺序表元素为："<<endl;
-    for(int i = 0;i<L.length;++i){
-        cout<<L.data[i]<<" ";
+    mysort(v, v.size(),[](const person &a, const person &b) {
+        return a.age > b.age; 
+    });
+    cout<<"After sorting:"<<endl;
+    for(auto &p:v){
+        p.getinfo();
+    }
+    vector<char>c;
+    int n;
+    cout<<"Enter the number of characters to sort: ";
+    cin>>n;
+    if(n<=0){
+        cout<<"Invalid number of characters."<<endl;
+        return 1;
+    }
+    for(int i=0;i<n;i++){
+        c.push_back('a'+(rand()%26));
+    }
+    cout<<"Before sorting:"<<endl;
+    for(const auto &ch:c){
+        cout<<ch<<" ";
     }
     cout<<endl;
-    int x;
-    cout<<"要插入的元素：";
-    cin>>x;
-    insertorder(L, x);
-    cout<<"插入后的顺序表为：";
-    for(int i = 0; i < L.length; i++){
-        cout<<L.data[i]<<" ";
+    mysort(c,c.size(),[](const char &a, const char &b) {
+        return a > b; 
+    });
+    cout<<"After sorting:"<<endl;
+    for(const auto &ch:c){
+        cout<<ch<<" ";
     }
     cout<<endl;
-   return 0;
+    
+    
+    return 0;
 }
