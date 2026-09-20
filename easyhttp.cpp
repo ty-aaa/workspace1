@@ -29,7 +29,9 @@ std::string handleRequest(const std::string& request) {
     std::string body;
     std::string status = "200 OK";
 
-    if (path == "/" || path == "/index.html") {
+    if (path == "/health") {
+        body = "OK";
+    } else if (path == "/" || path == "/index.html") {
         body = "<html><body><h1>Hello from easyhttp!</h1>"
                "<p>It works.</p></body></html>";
     } else {
