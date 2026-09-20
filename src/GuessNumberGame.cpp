@@ -72,7 +72,11 @@ private:
 
     void setNandT() {
         cout << "输入最大数字和最大次数：";
-        cin >> maxnum >> maxtry;
+        if(!(cin >> maxnum >> maxtry)||maxnum<1||maxtry<1){
+            cout<<"输入数据不合理，使用默认数据，maxnum = 500,maxtry = 10"<<endl;
+            maxnum = 500;
+            maxtry = 10;
+        };
         clearInput();
     }
 
