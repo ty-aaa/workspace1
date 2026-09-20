@@ -1,130 +1,166 @@
-#include<iostream>
-#include<ctime>
-#include<cstdlib>
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
 #include <limits>
 #include <cctype>
+#include <string>
+#include <thread>
+#include <chrono>
 using namespace std;
 
-class GuessNumberGame{
-    public:
-        
-        
-        void run(){
-            srand(static_cast<unsigned>(time(0)));
+// 颜色宏
+#define RESET   "\033[0m"
+#define RED     "\033[31m"
+#define GREEN   "\033[32m"
+#define YELLOW  "\033[33m"
+#define CYAN    "\033[36m"
+#define BOLD    "\033[1m"
+
+// 清屏
+void clearScreen() {
+    cout << "\033[2J\033[H";
+}
+
+// 延时（毫秒）
+void sleepMs(int ms) {
+    this_thread::sleep_for(chrono::milliseconds(ms));
+}
+
+class GuessNumberGame {
+public:
+    void run() {
+        srand(static_cast<unsigned>(time(0)));
+        clearScreen();
+        cout << BOLD << CYAN << "========================================\n";
+        cout << "         猜 数 字 游 戏\n";
+        cout << "========================================\n" << RESET;
+        cout << "想玩一局吗？(y/n): ";
+        string t;
+        cin >> t;
+        clearInput();
+
+        if (t == "y" || t == "Y") {
             bool flag = true;
-            cout<<"want to play a game? y or n"<<endl;
-            string t;
-            cin>>t;
-            clearInput();
-
-
-            if(t=="y"||t=="Y"){
-                flag = true;
-                while(flag){
-                    bool valid = false;
-                    while(!valid){
-                        cout<<"choose gamemode:easy,medium,hard or sd (self-define):"<<endl;
-                    
-                        cin>>t;
-                        clearInput();
-
-                        valid = SetDiff(t);
-                    }
-                    playoneround();
-                    flag = askagain();
-                    
+            while (flag) {
+                bool valid = false;
+                while (!valid) {
+                    cout << "\n选择难度：" << GREEN << "easy" << RESET
+                         << " / " << YELLOW << "medium" << RESET
+                         << " / " << RED << "hard" << RESET
+                         << " / sd（自定义）：";
+                    cin >> t;
+                    clearInput();
+                    valid = setDiff(t);
                 }
-            }else{
-                cout<<"Bye!"<<endl;
+                playOneRound();
+                flag = askAgain();
             }
         }
-    private:
-        int maxnum = 500,maxtry = 10,target = 0,tries = 0;
-        void setNandT(){
-            cout << "Enter max number and max tries: ";
-            cin >> maxnum >> maxtry;
-            clearInput();
+        cout << "\n" << CYAN << "再见！" << RESET << endl;
+    }
+
+private:
+    int maxnum = 500;
+    int maxtry = 10;
+    int target = 0;
+    int tries = 0;
+
+    void clearInput() {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+
+    void setNandT() {
+        cout << "输入最大数字和最大次数：";
+        cin >> maxnum >> maxtry;
+        clearInput();
+    }
+
+    bool setDiff(string s) {
+        for (char &c : s) c = tolower(static_cast<unsigned char>(c));
+        if (s == "e" || s == "easy") {
+            maxnum = 50;  maxtry = 10;
+        } else if (s == "m" || s == "medium") {
+            maxnum = 100; maxtry = 7;
+        } else if (s == "h" || s == "hard") {
+            maxnum = 500; maxtry = 6;
+        } else if (s == "sd") {
+            setNandT();
+        } else {
+            cout << RED << "没有这个模式！" << RESET << endl;
+            return false;
         }
-        
-        void clearInput() {
-            cin.clear();
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return true;
+    }
+
+    void playOneRound() {
+        tries = 0;
+        target = rand() % maxnum + 1;
+        bool win = false;
+
+        clearScreen();
+        cout << BOLD << "游戏开始！" << RESET
+             << " 范围 " << GREEN << "1 ~ " << maxnum << RESET
+             << "，共 " << YELLOW << maxtry << RESET << " 次机会\n\n";
+
+        while (tries < maxtry) {
+            // 进度条
+            cout << "机会：";
+            for (int i = 0; i < maxtry; ++i) {
+                if (i < maxtry - tries) cout << GREEN << "●" << RESET;
+                else cout << RED << "○" << RESET;
+            }
+            cout << "  剩余 " << maxtry - tries << " 次\n";
+
+            cout << "请输入你的猜测：";
+            int n;
+            cin >> n;
+            clearInput();
+
+            if (n < 1 || n > maxnum) {
+                cout << RED << "超出范围！请输入 1~" << maxnum << RESET << "\n\n";
+                continue;
+            }
+
+            ++tries;
+
+            if (n < target) {
+                cout << YELLOW << "太小了！" << RESET;
+                if (target - n <= 5) cout << "（很接近了）";
+                cout << "\n\n";
+            } else if (n > target) {
+                cout << YELLOW << "太大了！" << RESET;
+                if (n - target <= 5) cout << "（很接近了）";
+                cout << "\n\n";
+            } else {
+                cout << "\n" << GREEN << BOLD
+                     << "🎉 恭喜！你用 " << tries << " 次猜中了 " << target << "！"
+                     << RESET << "\n\n";
+                win = true;
+                sleepMs(1500);
+                break;
+            }
         }
 
-        bool SetDiff(string s){
-            for (char &c : s) {
-                c = tolower(static_cast<unsigned char>(c));
-            }   
-           
-            if (s == "e" || s == "easy") {
-            // 简单模式
-                maxnum = 100;
-                maxtry = 15;
-            } else if (s == "m" || s == "medium") {
-            // 中等模式
-                maxnum =  500;
-                maxtry = 10;
-            } else if (s == "h" || s == "hard") {
-            // 困难模式
-                maxnum = 1000;
-                maxtry = 7;
-            } else if(s=="sd"){
-            //自定义模式
-                setNandT();
-            }else{
-                cout<<"no such mode"<<endl;
-                return false;
-            }
-            return true;
+        if (!win) {
+            cout << RED << BOLD
+                 << "😢 机会用完了，正确答案是 " << target
+                 << RESET << "\n\n";
+            sleepMs(1500);
         }
-        void playoneround(){
-            tries = 0;
-            target = rand()%maxnum+1;
-            bool win = false;
-            cout<<"game start"<<endl;
-            cout<<"please enter a number bt 1 and "<<maxnum<<endl;
-            while(tries<maxtry){
-                ++tries;
-                int n = -1;
-                cin>>n;
-                clearInput();
-                if(n<1||n>maxnum){
-                    cout<<"please enter the number whthin the range"<<endl;
-                    cout<<maxtry-tries<<" times left"<<endl;
-                    continue;
-                }
-                if(n<target){
-                    cout<<"too small,enter again"<<endl;
-                    cout<<maxtry-tries<<" times left"<<endl;
-                }else if(n>target){
-                    cout<<"too big,enter again"<<endl;
-                    cout<<maxtry-tries<<" times left"<<endl;
-                }else{
-                    cout<<"congratulations! you guessed the number right by "<<tries<<" times"<<endl;
-                    win = true;
-                    break;
-                }
-               
-                    
-                
-            }
-            if(!win)cout<<"unfortunately,the game is over,the target is "<<target<<endl;
+    }
 
-        }
-        bool askagain(){
-            
-            cout<<"again or end? enter y or n"<<endl;
-            string s;
-            cin>>s;
-            clearInput();
-            return (s=="y"||s=="Y");
-             
-        }
-    
+    bool askAgain() {
+        cout << "再来一局？(y/n): ";
+        string s;
+        cin >> s;
+        clearInput();
+        return (s == "y" || s == "Y");
+    }
 };
-int main(){
+
+int main() {
     GuessNumberGame g;
     g.run();
-return 0;
-
+    return 0;
 }
