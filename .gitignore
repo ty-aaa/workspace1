@@ -1,7 +1,5 @@
 # 编译产物（本地生成，不应提交到仓库）
-easyhttp
-ttt
-Myvector
+build/
 
 # Claude Code 本地设置（含本机绝对路径，因人而异）
 .claude/settings.local.json
