@@ -3,11 +3,44 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 constexpr int PORT = 8081;
+
+// 根据扩展名推断 Content-Type
+std::string contentTypeOf(const std::string& path) {
+    auto endsWith = [&](const char* suffix) {
+        size_t n = std::strlen(suffix);
+        return path.size() >= n && path.compare(path.size() - n, n, suffix) == 0;
+    };
+    if (endsWith(".html")) return "text/html; charset=utf-8";
+    if (endsWith(".css"))  return "text/css; charset=utf-8";
+    if (endsWith(".js"))   return "application/javascript; charset=utf-8";
+    return "application/octet-stream";
+}
+
+// 从 www/ 目录读取文件；成功返回 true 并填充 body
+bool readWebFile(const std::string& urlPath, std::string& body) {
+    // "/" 映射到 index.html
+    std::string relative = (urlPath == "/") ? "/index.html" : urlPath;
+
+    // 防止路径穿越：拒绝任何含 ".." 的请求
+    if (relative.find("..") != std::string::npos) {
+        return false;
+    }
+
+    std::ifstream file("www" + relative, std::ios::binary);
+    if (!file) {
+        return false;
+    }
+    std::ostringstream contents;
+    contents << file.rdbuf();
+    body = contents.str();
+    return true;
+}
 
 // 处理一次客户端请求，返回生成的 HTTP 响应字符串
 std::string handleRequest(const std::string& request) {
@@ -28,12 +61,13 @@ std::string handleRequest(const std::string& request) {
 
     std::string body;
     std::string status = "200 OK";
+    std::string contentType = "text/html; charset=utf-8";
 
     if (path == "/health") {
+        contentType = "text/plain; charset=utf-8";
         body = "OK";
-    } else if (path == "/" || path == "/index.html") {
-        body = "<html><body><h1>Hello from easyhttp!</h1>"
-               "<p>It works.</p></body></html>";
+    } else if (readWebFile(path, body)) {
+        contentType = contentTypeOf(path);
     } else {
         status = "404 Not Found";
         body = "<html><body><h1>404 Not Found</h1>"
@@ -42,7 +76,7 @@ std::string handleRequest(const std::string& request) {
 
     std::ostringstream resp;
     resp << "HTTP/1.1 " << status << "\r\n"
-         << "Content-Type: text/html; charset=utf-8\r\n"
+         << "Content-Type: " << contentType << "\r\n"
          << "Content-Length: " << body.size() << "\r\n"
          << "Connection: close\r\n\r\n"
          << body;
